@@ -1,0 +1,163 @@
+{
+  "$schema": "../schema/envelope.schema.json",
+  "envelope_id": "env_mnq_intraday_20240215_a3f9",
+  "version": "0.1.0",
+  "template_ref": "trading/intraday_futures_v2",
+
+  "goal": {
+    "summary": "Run momentum strategy S-7 on MNQ (Micro E-mini Nasdaq) during the 09:30–16:00 ET intraday session on 2024-02-15. Read-only market data access permitted. No overnight positions.",
+    "task_type": "trading"
+  },
+
+  "capabilities": [
+    {
+      "cap_id": "cap_order_place",
+      "type": "order_place",
+      "scope": {
+        "symbols": ["MNQ"],
+        "order_types": ["limit", "market"],
+        "sides": ["buy", "sell"],
+        "max_qty_per_order": 2,
+        "session": "intraday_only"
+      },
+      "rate_limit": {
+        "max_per_minute": 5
+      }
+    },
+    {
+      "cap_id": "cap_order_cancel",
+      "type": "order_cancel",
+      "scope": {
+        "symbols": ["MNQ"],
+        "own_orders_only": true
+      }
+    },
+    {
+      "cap_id": "cap_market_data",
+      "type": "http_call",
+      "scope": {
+        "allowed_hosts": ["datafeed.internal"],
+        "methods": ["GET"],
+        "description": "Internal market data feed only. No external data vendors."
+      }
+    }
+  ],
+
+  "budgets": {
+    "max_actions_total": 500,
+    "max_external_calls": 0,
+    "max_duration_seconds": 23400,
+    "domain_specific": {
+      "max_orders_per_minute": 5,
+      "max_orders_per_day": 200,
+      "max_position_size_contracts": 2,
+      "max_daily_loss_usd": 500,
+      "max_drawdown_usd": 300,
+      "max_commission_usd": 50
+    }
+  },
+
+  "forbidden": [
+    {
+      "effect": "withdraw_funds",
+      "reason": "Fund withdrawal is never permitted from an automated strategy."
+    },
+    {
+      "effect": "change_api_keys",
+      "reason": "API key management is outside strategy scope."
+    },
+    {
+      "effect": "trade_unlisted_symbols",
+      "reason": "Only MNQ is authorized for this envelope instance."
+    },
+    {
+      "effect": "increase_leverage",
+      "reason": "Leverage settings are fixed at the account level and may not be modified by strategy."
+    },
+    {
+      "effect": "order_modify",
+      "reason": "Order modification is not permitted; cancel and replace only."
+    },
+    {
+      "effect": "hold_overnight_position",
+      "reason": "Strategy is intraday only. All positions must be flat before session close."
+    },
+    {
+      "effect": "external_network_call",
+      "reason": "No external network access permitted. All data must come from internal feeds."
+    },
+    {
+      "effect": "modify_governance_config",
+      "reason": "Agent may not alter Gateway rules, envelope templates, or its own constraints."
+    },
+    {
+      "effect": "restart_gateway",
+      "reason": "Gateway lifecycle is managed outside agent control domain."
+    }
+  ],
+
+  "postconditions": [
+    {
+      "condition_id": "post_all_orders_logged",
+      "check": "all_orders_logged",
+      "critical": true
+    },
+    {
+      "condition_id": "post_risk_checks_passed",
+      "check": "all_risk_checks_passed",
+      "critical": true
+    },
+    {
+      "condition_id": "post_flat_at_close",
+      "check": "no_open_positions_at_session_end",
+      "critical": true
+    },
+    {
+      "condition_id": "post_audit_complete",
+      "check": "audit_log_complete",
+      "critical": true
+    },
+    {
+      "condition_id": "post_loss_within_budget",
+      "check": "realized_loss_within_daily_limit",
+      "critical": true
+    }
+  ],
+
+  "circuit_breaker": {
+    "triggers": [
+      {
+        "condition": "daily_loss >= max_daily_loss_usd",
+        "action": "halt_and_cancel"
+      },
+      {
+        "condition": "drawdown >= max_drawdown_usd",
+        "action": "halt_and_cancel"
+      },
+      {
+        "condition": "consecutive_rejected_orders >= 5",
+        "action": "halt_only"
+      },
+      {
+        "condition": "session_end_approached_within_300s AND open_position_exists",
+        "action": "halt_and_cancel"
+      }
+    ],
+    "recovery": "manual_only"
+  },
+
+  "approval": {
+    "required": false,
+    "approved_by": "auto_verifier_v2",
+    "approved_at": "2024-02-15T09:25:00Z",
+    "approval_token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.example"
+  },
+
+  "meta": {
+    "created_at": "2024-02-15T09:24:55Z",
+    "expires_at": "2024-02-15T16:15:00Z",
+    "issued_by": "authz-service.internal",
+    "signature": "sha256:a1b2c3d4e5f6...",
+    "tags": ["strategy:S-7", "instrument:MNQ", "session:intraday", "env:production"]
+  }
+}
