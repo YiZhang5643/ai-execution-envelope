@@ -1,9 +1,11 @@
-# Execution Envelope
+# AI Execution Envelope
 
 > **A governance framework for autonomous agents that execute real-world side effects.**
 
 [![Status](https://img.shields.io/badge/status-proposal%20v0.1-orange)]()
 [![License](https://img.shields.io/badge/License-CC%20BY--SA%204.0-blue.svg)]()
+
+**Language / 语言：** English | [中文](README.zh.md)
 
 ---
 
@@ -80,9 +82,10 @@ The Envelope guarantees behavioral legality, not semantic correctness. Quality a
 ## Repository Structure
 
 ```
-execution-envelope/
+ai-execution-envelope/
 │
-├── README.md                        # This file
+├── README.md                        # This file (English)
+├── README.zh.md                     # 中文版
 │
 ├── spec/
 │   └── PRINCIPLES.md                # Formal statement of framework principles
