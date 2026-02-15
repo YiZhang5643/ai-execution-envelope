@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Execution Envelope — Governance Framework for Autonomous Agents</title>
+<meta name="description" content="A formally defined and enforceable boundary of permissible actions within which an autonomous agent must operate. From Code-Centric to Envelope-Centric governance.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Noto+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --ink: #1a1a18;
+    --ink-soft: #3d3d38;
+    --ink-muted: #7a7a72;
+    --paper: #f5f2eb;
+    --paper-warm: #ece8df;
+    --rule: #d4cfc4;
+    --accent: #c0392b;
+    --accent-soft: #f0dedd;
+    --code-bg: #1e1e1c;
+    --code-text: #d4d0c8;
+    --green: #2e7d32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 17px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif', serif;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LANGUAGE BAR ── */
+  .lang-bar {
+    background: var(--ink);
+    color: #ccc;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .lang-bar span { color: #666; }
+  .lang-bar a {
+    color: #ccc;
+    text-decoration: none;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid #444;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .lang-bar a:hover { color: white; border-color: #888; }
+  .lang-bar .lang-active {
+    color: white;
+    border-color: var(--accent);
+    background: rgba(192,57,43,0.15);
+    cursor: default;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrap { max-width: 800px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+  /* ── NAV ── */
+  .toc {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0.6rem 0;
+    z-index: 10;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .toc a { color: var(--ink-muted); text-decoration: none; transition: color 0.15s; }
+  .toc a:hover { color: var(--accent); }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    border-bottom: 3px double var(--ink);
+    padding: 3.5rem 0 2rem;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .masthead .kicker {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .masthead h1 {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .masthead .subtitle {
+    font-size: 1rem;
+    color: var(--ink-soft);
+    font-weight: 300;
+    line-height: 1.65;
+    max-width: 600px;
+    font-style: italic;
+    margin-bottom: 1.25rem;
+  }
+  .badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .badge {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    font-weight: 500;
+  }
+  .badge-orange { background: #e67e22; color: white; }
+  .badge-blue   { background: #2980b9; color: white; }
+
+  /* ── DEFINITION BLOCK ── */
+  .definition {
+    background: var(--ink);
+    color: #e8e4dc;
+    padding: 1.75rem 2rem;
+    margin: 2.5rem 0;
+    border-left: 4px solid var(--accent);
+  }
+  .definition .def-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+  .definition p {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+    text-indent: 0;
+  }
+  .definition strong { color: white; }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 3.5rem; animation: fadeUp 0.5s ease both; }
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 1.25rem;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 0.65rem;
+    color: var(--ink-soft);
+    font-family: 'Noto Sans', sans-serif;
+  }
+  p { margin-bottom: 1rem; }
+  p + p { text-indent: 1.5em; }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    background: var(--paper-warm);
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 1.4rem 1.75rem;
+    margin: 2.5rem 0;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    font-weight: 600;
+  }
+  .pull-quote::before {
+    content: 'Core Claim';
+    display: block;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.65rem;
+    font-weight: 500;
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    padding: 1.1rem 1.4rem;
+    margin: 2rem 0;
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+  .callout strong {
+    color: var(--accent);
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  .callout p { margin: 0; text-indent: 0; }
+
+  /* ── TABLES ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+  th {
+    background: var(--ink);
+    color: white;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: 500;
+  }
+  td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  tr:nth-child(even) td { background: var(--paper-warm); }
+  td code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--paper-warm);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  tr:nth-child(even) td code { background: var(--paper); }
+
+  /* ── PRINCIPLES ── */
+  .principles { margin: 1.5rem 0; }
+  .principle {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0 1rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+  }
+  .principle-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 500;
+    padding-top: 0.15rem;
+  }
+  .principle-body strong {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+  }
+  .principle-body p {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    line-height: 1.65;
+    margin: 0;
+    text-indent: 0;
+  }
+
+  /* ── CODE ── */
+  .code-label {
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    padding: 1.4rem 1.5rem;
+    border-radius: 2px;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    background: var(--paper-warm);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch {
+    background: var(--paper-warm);
+    border: 1.5px solid var(--rule);
+    padding: 1.75rem 2rem;
+    margin: 2rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 2;
+  }
+  .arch-box {
+    border: 1.5px solid var(--ink);
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .arch-box.gateway { background: var(--ink); color: white; }
+  .arch-box .box-label { font-weight: 500; white-space: nowrap; }
+  .arch-box .box-note { font-size: 0.7rem; color: var(--ink-muted); text-align: right; line-height: 1.5; }
+  .arch-box.gateway .box-note { color: #888; }
+  .arch-arrow {
+    text-align: center;
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    padding: 0.1rem 0;
+  }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; margin: 1rem 0; }
+  .checklist li {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    padding: 0.2rem 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .checklist li::before {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .checklist li.done::before { content: '[×]'; color: var(--green); }
+  .checklist li.todo::before { content: '[ ]'; color: var(--ink-muted); }
+
+  /* ── TWO-COL ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1.5rem 0; }
+  .two-col-item h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1.5px solid var(--rule);
+    font-family: 'Noto Sans', sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .two-col-item ul { list-style: none; font-size: 0.88rem; line-height: 1.8; }
+  .two-col-item.can ul li::before { content: '✓ '; color: var(--green); font-weight: 600; }
+  .two-col-item.cannot ul li::before { content: '✗ '; color: var(--accent); font-weight: 600; }
+
+  /* ── LAYER DIAGRAM ── */
+  .layers { margin: 1.5rem 0; }
+  .layer {
+    border: 1.5px solid var(--rule);
+    padding: 1rem 1.25rem;
+    margin-bottom: -1px;
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0 1rem;
+    align-items: start;
+    background: white;
+  }
+  .layer:first-child { border-top-left-radius: 2px; border-top-right-radius: 2px; }
+  .layer:last-child { border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; margin-bottom: 0; }
+  .layer-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    padding-top: 0.1rem;
+  }
+  .layer-body strong { font-size: 0.9rem; display: block; margin-bottom: 0.2rem; }
+  .layer-body p { font-size: 0.85rem; color: var(--ink-soft); margin: 0; text-indent: 0; line-height: 1.6; }
+  .layer-arrow {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    padding: 0.2rem 0;
+    background: var(--paper);
+    border-left: 1.5px solid var(--rule);
+    border-right: 1.5px solid var(--rule);
+    margin: 0;
+  }
+  .layer-result {
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: white;
+    padding: 0.65rem 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+    margin-top: -1px;
+  }
+
+  /* ── SUMMARY TABLE ── */
+  .summary-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.88rem; }
+  .summary-table th:first-child { width: 30%; }
+  .summary-table td:first-child { font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 0.82rem; color: var(--ink-muted); letter-spacing: 0.04em; }
+
+  /* ── FINAL STATEMENT ── */
+  .final-statement {
+    border: 2px solid var(--ink);
+    padding: 1.5rem 2rem;
+    margin: 2.5rem 0 0;
+    background: var(--ink);
+    color: white;
+    font-size: 1rem;
+    line-height: 1.7;
+    font-weight: 400;
+  }
+  .final-statement strong { color: #f0c040; }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 3px double var(--ink);
+    padding-top: 1.75rem;
+    margin-top: 4rem;
+    font-family: 'Noto Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer a { color: var(--ink-muted); }
+
+  /* ── DIVIDER ── */
+  hr { border: none; border-top: 1px solid var(--rule); margin: 3rem 0; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .section:nth-child(2) { animation-delay: 0.05s; }
+  .section:nth-child(3) { animation-delay: 0.1s; }
+  .section:nth-child(4) { animation-delay: 0.15s; }
+  .section:nth-child(5) { animation-delay: 0.2s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    html { font-size: 15px; }
+    .masthead h1 { font-size: 1.9rem; }
+    .two-col { grid-template-columns: 1fr; }
+    .toc { gap: 1rem; }
+    .arch-box { flex-direction: column; }
+    .layer { grid-template-columns: 1fr; gap: 0.25rem; }
+    .layer-num { font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE BAR -->
+<div class="lang-bar">
+  <span>Language / 语言</span>
+  <span class="lang-active">EN</span>
+  <a href="index.zh.html">中文</a>
+</div>
+
+<!-- STICKY NAV -->
+<div class="toc page-wrap" style="max-width:800px;margin:0 auto;">
+  <a href="#problem">Problem</a>
+  <a href="#proposal">Proposal</a>
+  <a href="#principles">Principles</a>
+  <a href="#not-this">Not This</a>
+  <a href="#generation">Generation</a>
+  <a href="#enforcement">Enforcement</a>
+  <a href="#threat-model">Threat Model</a>
+  <a href="#status">Status</a>
+</div>
+
+<div class="page-wrap">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <span class="kicker">Framework Proposal · Agent Governance · v0.1</span>
+    <h1>AI Execution Envelope</h1>
+    <p class="subtitle">Formal execution boundaries for autonomous agents.<br>From Code-Centric to Envelope-Centric governance.</p>
+    <div class="badges">
+      <span class="badge badge-orange">Proposal v0.1</span>
+      <span class="badge badge-blue">CC BY-SA 4.0</span>
+    </div>
+  </div>
+
+  <!-- § PROBLEM -->
+  <div class="section" id="problem">
+    <span class="section-number">§ 01</span>
+    <h2>The Problem</h2>
+
+    <p>When an LLM is a coding assistant, traditional software engineering is sufficient.</p>
+    <p>When an LLM becomes an autonomous execution agent — modifying databases, placing trades, triggering deployments, calling external APIs without per-action human review — the governance model breaks.</p>
+
+    <div class="callout">
+      <strong>Structural Failure</strong>
+      <p><strong>Code-Centric governance assumes a human is responsible for every action.</strong> That assumption is no longer valid. The failure mode is structural, not incidental.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="two-col-item cannot">
+        <h4>Old questions (Code-Centric)</h4>
+        <ul>
+          <li>Is the code logic correct?</li>
+          <li>Is test coverage sufficient?</li>
+          <li>Was the review thorough?</li>
+        </ul>
+      </div>
+      <div class="two-col-item can">
+        <h4>New questions (Envelope-Centric)</h4>
+        <ul>
+          <li>Is this action authorized?</li>
+          <li>Is a budget limit being exceeded?</li>
+          <li>Was an irreversible risk triggered?</li>
+          <li>Is this auditable and accountable?</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Traditional unit and integration tests do not cover these questions.</p>
+  </div>
+
+  <!-- § PROPOSAL -->
+  <div class="section" id="proposal">
+    <span class="section-number">§ 02</span>
+    <h2>The Proposal: Execution Envelope–Centric Governance</h2>
+
+    <div class="definition">
+      <span class="def-label">Definition</span>
+      <p>An <strong>Execution Envelope</strong> is a formally defined and enforceable boundary of permissible actions within which an autonomous agent must operate.</p>
+    </div>
+
+    <p>Every autonomous task must be governed by an Execution Envelope <strong>before</strong> any code runs. The Envelope defines a multi-dimensional feasible action space — every field is a constraint dimension. Agent actions must fall within this space; boundary violations are structurally impermissible, not merely discouraged.</p>
+
+    <table>
+      <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>goal</code></td><td>Declared task intent</td></tr>
+        <tr><td><code>capabilities</code></td><td>What resources the agent may access, and under what scope</td></tr>
+        <tr><td><code>budgets</code></td><td>Hard consumption limits (orders, API calls, loss, duration)</td></tr>
+        <tr><td><code>forbidden</code></td><td>Explicitly prohibited actions — independent of capability grants</td></tr>
+        <tr><td><code>postconditions</code></td><td>Verifiable completion criteria checked by the Gateway</td></tr>
+      </tbody>
+    </table>
+
+    <div class="pull-quote">
+      Code-Centric: code is the authority — governance happens after execution (review / test).<br>
+      Envelope-Centric: the Envelope is the authority — governance happens before execution (verify / approve / enforce).
+    </div>
+
+    <p>The Envelope is not documentation. It is the <strong>control plane</strong> — verified before execution, enforced at runtime by a proxy that operates outside the agent's control domain.</p>
+  </div>
+
+  <!-- § PRINCIPLES -->
+  <div class="section" id="principles">
+    <span class="section-number">§ 03</span>
+    <h2>Core Principles</h2>
+    <p>These are not guidelines. They are the conditions under which the framework's guarantees hold.</p>
+
+    <div class="principles">
+      <div class="principle">
+        <span class="principle-num">P1</span>
+        <div class="principle-body">
+          <strong>The Envelope precedes the code.</strong>
+          <p>No agent action is permitted without a valid, verified Envelope. Code is an implementation detail; the Envelope is the authority.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P2</span>
+        <div class="principle-body">
+          <strong>Enforcement is not optional.</strong>
+          <p>If an agent can bypass the enforcement layer through any path, the architecture has failed. Enforcement must be a physical and network-layer fact, not a convention.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P3</span>
+        <div class="principle-body">
+          <strong>The control plane is independent.</strong>
+          <p>The Envelope definition and enforcement logic must run outside the agent's control domain. An agent that can modify its own governance layer has no governance layer.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P4</span>
+        <div class="principle-body">
+          <strong>Envelopes are ephemeral capability instances.</strong>
+          <p>An Envelope is not a long-term permission grant. It is a scoped, time-bounded authorization for a single task execution.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P5</span>
+        <div class="principle-body">
+          <strong>The agent is a parameter instantiator, not a rule author.</strong>
+          <p>The LLM fills task-specific parameters within template bounds. It cannot create new capability types or override forbidden effects.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P6</span>
+        <div class="principle-body">
+          <strong>Compliance ≠ Correctness.</strong>
+          <p>The Envelope guarantees behavioral legality, not semantic correctness. Quality assurance requires independent mechanisms.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- § NOT THIS -->
+  <div class="section" id="not-this">
+    <span class="section-number">§ 04</span>
+    <h2>What This Is Not</h2>
+
+    <table>
+      <thead><tr><th>Not this</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>A replacement for IAM</td><td>IAM manages long-term identity permissions (static). Envelopes manage per-task authorization (dynamic).</td></tr>
+        <tr><td>A replacement for OPA/Cedar</td><td>Policy engines evaluate rules. Envelopes provide the structured task instance for them to evaluate.</td></tr>
+        <tr><td>A replacement for Temporal</td><td>Temporal ensures execution consistency. Envelopes determine whether execution is permitted.</td></tr>
+        <tr><td>A new programming language</td><td>General-purpose languages remain in the data plane. The Envelope is the control plane.</td></tr>
+        <tr><td>A correctness guarantee</td><td>Envelopes bound behavior. They do not guarantee that bounded behavior produces correct results.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- § GENERATION MODEL -->
+  <div class="section" id="generation">
+    <span class="section-number">§ 05</span>
+    <h2>The Three-Layer Generation Model</h2>
+
+    <p>An Execution Envelope is not freely generated by the LLM. This would make governance vacuous. The LLM is a <strong>parameter instantiator</strong>, not a rule author.</p>
+
+    <div class="layers">
+      <div class="layer">
+        <span class="layer-num">Layer 1</span>
+        <div class="layer-body">
+          <strong>Organization defines envelope templates</strong>
+          <p>Humans and security team define fixed risk bounds: max position size, loss limits, symbol allowlists, forbidden baselines. Versioned and reviewed. Changes require security approval.</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer">
+        <span class="layer-num">Layer 2</span>
+        <div class="layer-body">
+          <strong>LLM instantiates parameters within template bounds</strong>
+          <p>Fills task-specific fields: strategy version, symbol selection (within allowlist), time window, parameters. Cannot create new capability types or exceed template ceilings.</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer">
+        <span class="layer-num">Layer 3</span>
+        <div class="layer-body">
+          <strong>Verifier checks the envelope before execution</strong>
+          <p>Automated checks: capability coverage, budget limits, forbidden items, signature validity, expiry. Human approval triggered where required by template policy.</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer-result">Execution permitted — or rejected</div>
+    </div>
+
+    <div class="callout" style="margin-top:1.5rem;">
+      <strong>Explicit Trade-off</strong>
+      <p>This framework chooses to constrain LLM autonomy to "instantiating parameters within a template" rather than permitting arbitrary code generation. This is a deliberate trade-off between autonomy and controllability: the agent's action space is bounded by predefined primitives, in exchange for guarantees that can be structurally enforced.</p>
+    </div>
+  </div>
+
+  <!-- § ENFORCEMENT -->
+  <div class="section" id="enforcement">
+    <span class="section-number">§ 06</span>
+    <h2>Enforcement Architecture</h2>
+
+    <div class="callout">
+      <strong>Non-negotiable precondition</strong>
+      <p><strong>If the agent can reach external systems through any path other than the Gateway, the Execution Envelope architecture has failed.</strong> A more fundamental requirement: the Envelope definition and Gateway enforcement logic must run outside the agent's control domain. An agent that can modify Gateway rules, restart the Gateway process, or replace Envelope configuration has no effective governance layer. Control plane independence is not a deployment detail — it is a correctness requirement.</p>
+    </div>
+
+    <div class="arch">
+      <div class="arch-box">
+        <span class="box-label">Agent / Strategy Code<br><small style="font-weight:300;color:#888">(data plane)</small></span>
+        <span class="box-note">No API keys.<br>No external network access.<br>Submits requests to Gateway only.</span>
+      </div>
+      <div class="arch-arrow">│ internal request only ↓</div>
+      <div class="arch-box gateway">
+        <span class="box-label">Order Gateway / Runtime Proxy<br><small style="font-weight:300;color:#aaa">(control plane)</small></span>
+        <span class="box-note" style="color:#aaa;">Holds credentials.<br>Enforces Envelope.<br>Outside agent control domain.<br>Logs every action.</span>
+      </div>
+      <div class="arch-arrow">│ verified, authorized calls only ↓</div>
+      <div class="arch-box">
+        <span class="box-label">External Systems<br><small style="font-weight:300;color:#888">(exchange / API / database)</small></span>
+        <span class="box-note"></span>
+      </div>
+    </div>
+
+    <h3>Four layers that make bypass impossible</h3>
+
+    <p><strong>1. Credential isolation.</strong> API keys exist only inside the Gateway process, injected via secrets manager. The agent process has no read access. Even a fully compromised agent cannot place orders directly — the keys are not there.</p>
+
+    <p><strong>2. Network lockdown.</strong> The agent runs in a network-restricted environment. Egress rules block all external addresses; the only permitted outbound destination is the Gateway's internal address. A direct connection to any exchange domain is dropped at the network layer before it reaches the target.</p>
+
+    <p><strong>3. Per-request Envelope checks.</strong> Every request submitted to the Gateway is checked against the active Envelope in sequence: forbidden effects → capability authorization → scope conformance → rate limits → budget limits → expiry → circuit breaker state. Any failure rejects the request and writes to the audit log. No external call is made.</p>
+
+    <p><strong>4. Circuit breaker and forced halt.</strong> The Gateway maintains real-time session state. When thresholds are hit (loss limit, drawdown, consecutive errors, session end approaching), it halts all execution and cancels open orders. Recovery requires human intervention or a new Envelope — the agent cannot self-recover.</p>
+  </div>
+
+  <!-- § THREAT MODEL -->
+  <div class="section" id="threat-model">
+    <span class="section-number">§ 07</span>
+    <h2>What the Envelope Guarantees — and What It Does Not</h2>
+
+    <div class="two-col">
+      <div class="two-col-item can">
+        <h4>Guaranteed (compliance / risk boundary)</h4>
+        <ul>
+          <li>No access to non-whitelisted resources</li>
+          <li>No breach of position / frequency / loss limits</li>
+          <li>No execution of forbidden operations</li>
+          <li>All actions auditable and traceable</li>
+          <li>Circuit-break recovery requires human action</li>
+        </ul>
+      </div>
+      <div class="two-col-item cannot">
+        <h4>Not guaranteed (quality / correctness)</h4>
+        <ul>
+          <li>Strategy will be profitable</li>
+          <li>Signal logic is correct</li>
+          <li>Parameter selection is optimal</li>
+          <li>No losses within permitted limits</li>
+          <li>Semantic accuracy of outputs</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin-top:1rem;">The Envelope provides <strong>controllable autonomous execution</strong>, not <strong>correct autonomous execution</strong>. Quality assurance requires independent mechanisms: backtesting, paper trading, sampling verification, human-in-the-loop for critical decisions.</p>
+  </div>
+
+  <!-- § STATUS -->
+  <div class="section" id="status">
+    <span class="section-number">§ 08</span>
+    <h2>Status &amp; Repository</h2>
+
+    <p>This is a <strong>framework proposal</strong>, not a production implementation.</p>
+
+    <ul class="checklist">
+      <li class="done">Threat model</li>
+      <li class="done">Core principles</li>
+      <li class="done">JSON Schema v0.1</li>
+      <li class="done">Trading domain example</li>
+      <li class="done">Gateway verification spec</li>
+      <li class="todo">Reference implementation (Gateway proxy)</li>
+      <li class="todo">Formal capability lattice definition</li>
+      <li class="todo">Cross-organization envelope exchange protocol</li>
+    </ul>
+
+    <h3>Repository structure</h3>
+    <span class="code-label"><a href="https://github.com/YiZhang5643/ai-execution-envelope">ai-execution-envelope/</a></span>
+<pre>├── README.md                    # English
+├── README.zh.md                 # 中文
+├── spec/
+│   └── PRINCIPLES.md            # Formal framework principles
+├── schema/
+│   └── envelope.schema.json     # JSON Schema v0.1
+├── examples/
+│   └── trading/
+│       ├── envelope.json        # MNQ intraday strategy example
+│       └── template.json        # Org-level template
+├── gateway/
+│   └── VERIFICATION_SPEC.md     # Gateway enforcement spec
+└── docs/
+    └── THREAT_MODEL.md          # Threat model &amp; non-goals</pre>
+
+    <h3>Contributing</h3>
+    <p>Contributions most needed: critique of the threat model, alternative enforcement architectures, domain-specific envelope examples (deployment, DB migration, payment), formal treatment of capability semantics.</p>
+  </div>
+
+  <!-- FINAL STATEMENT -->
+  <div class="final-statement">
+    When an LLM gains the ability to produce real-world side effects, an Execution Envelope is not an engineering optimization.<br>
+    <strong>It is the minimum governance structure. Without it, you do not have an insufficiently secure system — you have no governance structure at all.</strong>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>AI Execution Envelope · Framework Proposal v0.1 · CC BY-SA 4.0</span>
+    <a href="index.zh.html">中文版 →</a>
+  </div>
+
+</div>
+</body>
+</html>
