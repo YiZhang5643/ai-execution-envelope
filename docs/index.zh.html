@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Execution Envelope — 自主 Agent 执行治理框架</title>
+<meta name="description" content="执行包线：一个形式化且可强制执行的边界，定义了自主 Agent 被允许执行的所有动作范围。从代码中心到包线中心的治理范式转移。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+  :root {
+    --ink: #1a1a18;
+    --ink-soft: #3d3d38;
+    --ink-muted: #7a7a72;
+    --paper: #f5f2eb;
+    --paper-warm: #ece8df;
+    --rule: #d4cfc4;
+    --accent: #c0392b;
+    --accent-soft: #f0dedd;
+    --code-bg: #1e1e1c;
+    --code-text: #d4d0c8;
+    --green: #2e7d32;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 17px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    line-height: 1.9;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LANGUAGE BAR ── */
+  .lang-bar {
+    background: var(--ink);
+    color: #ccc;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .lang-bar span { color: #666; }
+  .lang-bar a {
+    color: #ccc;
+    text-decoration: none;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid #444;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .lang-bar a:hover { color: white; border-color: #888; }
+  .lang-bar .lang-active {
+    color: white;
+    border-color: var(--accent);
+    background: rgba(192,57,43,0.15);
+    cursor: default;
+  }
+
+  /* ── LAYOUT ── */
+  .page-wrap { max-width: 800px; margin: 0 auto; padding: 0 2rem 6rem; }
+
+  /* ── NAV ── */
+  .toc {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: 0.6rem 0;
+    z-index: 10;
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+  }
+  .toc a { color: var(--ink-muted); text-decoration: none; transition: color 0.15s; }
+  .toc a:hover { color: var(--accent); }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    border-bottom: 3px double var(--ink);
+    padding: 3.5rem 0 2rem;
+    margin-bottom: 3rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .masthead .kicker {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .masthead h1 {
+    font-size: 2.6rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.75rem;
+  }
+  .masthead .subtitle {
+    font-size: 1rem;
+    color: var(--ink-soft);
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 600px;
+    margin-bottom: 1.25rem;
+  }
+  .badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .badge {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2px;
+    font-weight: 500;
+  }
+  .badge-orange { background: #e67e22; color: white; }
+  .badge-blue   { background: #2980b9; color: white; }
+
+  /* ── DEFINITION BLOCK ── */
+  .definition {
+    background: var(--ink);
+    color: #e8e4dc;
+    padding: 1.75rem 2rem;
+    margin: 2.5rem 0;
+    border-left: 4px solid var(--accent);
+  }
+  .definition .def-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+  .definition p { font-size: 1rem; line-height: 1.75; margin: 0; text-indent: 0; }
+  .definition strong { color: white; }
+
+  /* ── SECTIONS ── */
+  .section { margin-bottom: 3.5rem; animation: fadeUp 0.5s ease both; }
+  .section-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  h2 { font-size: 1.4rem; font-weight: 700; line-height: 1.3; margin-bottom: 1.25rem; letter-spacing: -0.01em; }
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 0.65rem;
+    color: var(--ink-soft);
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  p { margin-bottom: 1rem; }
+  p + p { text-indent: 1.5em; }
+
+  /* ── PULL QUOTE ── */
+  .pull-quote {
+    background: var(--paper-warm);
+    border-top: 2px solid var(--ink);
+    border-bottom: 2px solid var(--ink);
+    padding: 1.4rem 1.75rem;
+    margin: 2.5rem 0;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    font-weight: 600;
+  }
+  .pull-quote::before {
+    content: '核心主张';
+    display: block;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 0.65rem;
+    font-weight: 500;
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    background: var(--accent-soft);
+    border-left: 4px solid var(--accent);
+    padding: 1.1rem 1.4rem;
+    margin: 2rem 0;
+    font-size: 0.92rem;
+    line-height: 1.75;
+  }
+  .callout strong {
+    color: var(--accent);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+  .callout p { margin: 0; text-indent: 0; }
+
+  /* ── TABLES ── */
+  table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem; }
+  th {
+    background: var(--ink);
+    color: white;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: 500;
+  }
+  td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.65; }
+  tr:nth-child(even) td { background: var(--paper-warm); }
+  td code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: var(--paper-warm);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  tr:nth-child(even) td code { background: var(--paper); }
+
+  /* ── PRINCIPLES ── */
+  .principles { margin: 1.5rem 0; }
+  .principle {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0 1rem;
+    margin-bottom: 1.5rem;
+    align-items: start;
+  }
+  .principle-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 500;
+    padding-top: 0.15rem;
+  }
+  .principle-body strong { display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
+  .principle-body p { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.7; margin: 0; text-indent: 0; }
+
+  /* ── CODE ── */
+  .code-label {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    padding: 1.4rem 1.5rem;
+    border-radius: 2px;
+    overflow-x: auto;
+    margin: 1.25rem 0;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    background: var(--paper-warm);
+    padding: 0.1em 0.35em;
+    border-radius: 2px;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch {
+    background: var(--paper-warm);
+    border: 1.5px solid var(--rule);
+    padding: 1.75rem 2rem;
+    margin: 2rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    line-height: 2;
+  }
+  .arch-box {
+    border: 1.5px solid var(--ink);
+    padding: 0.5rem 1rem;
+    margin: 0.25rem 0;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .arch-box.gateway { background: var(--ink); color: white; }
+  .arch-box .box-label { font-weight: 500; white-space: nowrap; }
+  .arch-box .box-note { font-size: 0.7rem; color: var(--ink-muted); text-align: right; line-height: 1.6; font-family: 'Noto Sans SC', sans-serif; }
+  .arch-box.gateway .box-note { color: #888; }
+  .arch-arrow { text-align: center; color: var(--ink-muted); font-size: 0.75rem; letter-spacing: 0.05em; padding: 0.1rem 0; }
+
+  /* ── CHECKLIST ── */
+  .checklist { list-style: none; margin: 1rem 0; }
+  .checklist li {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    padding: 0.2rem 0;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .checklist li::before { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; flex-shrink: 0; }
+  .checklist li.done::before { content: '[×]'; color: var(--green); }
+  .checklist li.todo::before { content: '[ ]'; color: var(--ink-muted); }
+
+  /* ── TWO-COL ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1.5rem 0; }
+  .two-col-item h4 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1.5px solid var(--rule);
+    font-family: 'Noto Sans SC', sans-serif;
+    color: var(--ink-soft);
+  }
+  .two-col-item ul { list-style: none; font-size: 0.88rem; line-height: 1.85; }
+  .two-col-item.can ul li::before { content: '✓ '; color: var(--green); font-weight: 600; }
+  .two-col-item.cannot ul li::before { content: '✗ '; color: var(--accent); font-weight: 600; }
+
+  /* ── LAYER DIAGRAM ── */
+  .layers { margin: 1.5rem 0; }
+  .layer {
+    border: 1.5px solid var(--rule);
+    padding: 1rem 1.25rem;
+    margin-bottom: -1px;
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: 0 1rem;
+    align-items: start;
+    background: white;
+  }
+  .layer:first-child { border-top-left-radius: 2px; border-top-right-radius: 2px; }
+  .layer:last-child { border-bottom-left-radius: 2px; border-bottom-right-radius: 2px; margin-bottom: 0; }
+  .layer-num { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent); letter-spacing: 0.08em; padding-top: 0.1rem; }
+  .layer-body strong { font-size: 0.9rem; display: block; margin-bottom: 0.2rem; }
+  .layer-body p { font-size: 0.85rem; color: var(--ink-soft); margin: 0; text-indent: 0; line-height: 1.65; }
+  .layer-arrow {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    padding: 0.2rem 0;
+    background: var(--paper);
+    border-left: 1.5px solid var(--rule);
+    border-right: 1.5px solid var(--rule);
+    margin: 0;
+  }
+  .layer-result {
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: white;
+    padding: 0.65rem 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+    margin-top: -1px;
+  }
+
+  /* ── FINAL STATEMENT ── */
+  .final-statement {
+    border: 2px solid var(--ink);
+    padding: 1.5rem 2rem;
+    margin: 2.5rem 0 0;
+    background: var(--ink);
+    color: white;
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+  .final-statement strong { color: #f0c040; }
+
+  /* ── FOOTER ── */
+  .footer {
+    border-top: 3px double var(--ink);
+    padding-top: 1.75rem;
+    margin-top: 4rem;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    line-height: 1.7;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .footer a { color: var(--ink-muted); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .section:nth-child(2) { animation-delay: 0.05s; }
+  .section:nth-child(3) { animation-delay: 0.1s; }
+  .section:nth-child(4) { animation-delay: 0.15s; }
+  .section:nth-child(5) { animation-delay: 0.2s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    html { font-size: 15px; }
+    .masthead h1 { font-size: 1.9rem; }
+    .two-col { grid-template-columns: 1fr; }
+    .toc { gap: 1rem; }
+    .arch-box { flex-direction: column; }
+    .layer { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LANGUAGE BAR -->
+<div class="lang-bar">
+  <span>Language / 语言</span>
+  <a href="index.html">English</a>
+  <span class="lang-active">中文</span>
+</div>
+
+<!-- STICKY NAV -->
+<div class="toc page-wrap" style="max-width:800px;margin:0 auto;">
+  <a href="#problem">问题</a>
+  <a href="#proposal">提案</a>
+  <a href="#principles">原则</a>
+  <a href="#not-this">边界</a>
+  <a href="#generation">生成模型</a>
+  <a href="#enforcement">强制执行</a>
+  <a href="#threat-model">威胁模型</a>
+  <a href="#status">状态</a>
+</div>
+
+<div class="page-wrap">
+
+  <!-- MASTHEAD -->
+  <div class="masthead">
+    <span class="kicker">框架提案 · Agent 治理 · v0.1</span>
+    <h1>AI Execution Envelope</h1>
+    <p class="subtitle">自主 Agent 的形式化执行边界。<br>从代码中心到执行包线中心的治理范式转移。</p>
+    <div class="badges">
+      <span class="badge badge-orange">提案 v0.1</span>
+      <span class="badge badge-blue">CC BY-SA 4.0</span>
+    </div>
+  </div>
+
+  <!-- § 问题 -->
+  <div class="section" id="problem">
+    <span class="section-number">§ 01</span>
+    <h2>问题</h2>
+
+    <p>当 LLM 只是编程助手时，传统软件工程足够。</p>
+    <p>当 LLM 成为自主执行主体——修改数据库、下达交易指令、触发部署、调用外部 API，且无需人工逐次审核时——治理模型开始失效。</p>
+
+    <div class="callout">
+      <strong>结构性失效</strong>
+      <p><strong>代码中心（Code-Centric）治理的默认假设是：每一个动作都有人类负责。</strong>这个假设已不再成立。失效模式是结构性的，而非偶然的。</p>
+    </div>
+
+    <div class="two-col">
+      <div class="two-col-item cannot">
+        <h4>旧问题（代码中心）</h4>
+        <ul>
+          <li>代码逻辑是否正确？</li>
+          <li>测试覆盖率够吗？</li>
+          <li>Review 是否充分？</li>
+        </ul>
+      </div>
+      <div class="two-col-item can">
+        <h4>新问题（包线中心）</h4>
+        <ul>
+          <li>行为是否被授权？</li>
+          <li>是否超出预算上限？</li>
+          <li>是否触发不可逆风险？</li>
+          <li>是否可审计与可追责？</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>这些问题，传统单元测试与集成测试并不覆盖。</p>
+  </div>
+
+  <!-- § 提案 -->
+  <div class="section" id="proposal">
+    <span class="section-number">§ 02</span>
+    <h2>提案：执行包线中心治理</h2>
+
+    <div class="definition">
+      <span class="def-label">定义</span>
+      <p><strong>执行包线（Execution Envelope）</strong>是一个形式化且可强制执行的边界，定义了自主 Agent 被允许执行的所有动作范围。Agent 必须在此边界内运行。</p>
+    </div>
+
+    <p>每一个自主任务，都必须在任何代码运行之前，由一个执行包线进行约束。执行包线定义了一个<strong>多维可行状态空间</strong>——每个字段都是一个约束维度。Agent 的所有动作必须落在该可行域内；越界动作在结构上不被允许，而不仅仅是"不被期望"。</p>
+
+    <table>
+      <thead><tr><th>字段</th><th>用途</th></tr></thead>
+      <tbody>
+        <tr><td><code>goal</code></td><td>声明的任务意图</td></tr>
+        <tr><td><code>capabilities</code></td><td>Agent 可访问的资源范围及约束条件</td></tr>
+        <tr><td><code>budgets</code></td><td>资源消耗的硬性上限（订单数、API 调用、亏损、时长）</td></tr>
+        <tr><td><code>forbidden</code></td><td>明确禁止的动作——独立于能力授权之外</td></tr>
+        <tr><td><code>postconditions</code></td><td>可验证的完成条件，由 Gateway 检查</td></tr>
+      </tbody>
+    </table>
+
+    <div class="pull-quote">
+      代码中心：代码是权威，治理在执行之后（review / test）。<br>
+      执行包线中心：执行包线是权威，治理在执行之前（verify / approve / enforce）。
+    </div>
+
+    <p>执行包线不是文档，而是<strong>控制平面</strong>——在执行前完成验证，在运行时由独立于 Agent 控制域之外的代理强制执行。</p>
+  </div>
+
+  <!-- § 原则 -->
+  <div class="section" id="principles">
+    <span class="section-number">§ 03</span>
+    <h2>核心原则</h2>
+    <p>这些不是指导方针，而是框架保证成立的前提条件。</p>
+
+    <div class="principles">
+      <div class="principle">
+        <span class="principle-num">P1</span>
+        <div class="principle-body">
+          <strong>执行包线先于代码存在。</strong>
+          <p>在没有有效且经过验证的执行包线的情况下，任何 Agent 动作都不被允许。代码是实现细节；执行包线才是权威。</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P2</span>
+        <div class="principle-body">
+          <strong>强制执行不是可选项。</strong>
+          <p>如果 Agent 可以通过任何路径绕过强制层，架构即告失效。强制执行必须是物理层和网络层的既成事实，而不是约定。</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P3</span>
+        <div class="principle-body">
+          <strong>控制平面必须独立。</strong>
+          <p>执行包线的定义与强制逻辑，必须运行在 Agent 控制域之外。能够修改自身治理层的 Agent，等于没有治理层。</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P4</span>
+        <div class="principle-body">
+          <strong>执行包线是临时能力实例。</strong>
+          <p>执行包线不是长期权限授予，而是针对单次任务执行的、有范围限定、有时效限制的授权。</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P5</span>
+        <div class="principle-body">
+          <strong>Agent 是参数实例化者，而非规则制定者。</strong>
+          <p>LLM 只能在模板边界内填写任务参数，不能创建新的能力类型，也不能覆盖禁止项。</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="principle-num">P6</span>
+        <div class="principle-body">
+          <strong>合规 ≠ 正确。</strong>
+          <p>执行包线保证行为合法性，而非语义正确性。质量保证需要独立的机制。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- § 边界 -->
+  <div class="section" id="not-this">
+    <span class="section-number">§ 04</span>
+    <h2>这不是什么</h2>
+
+    <table>
+      <thead><tr><th>不是</th><th>原因</th></tr></thead>
+      <tbody>
+        <tr><td>IAM 的替代品</td><td>IAM 管理长期身份权限（静态）；执行包线管理单次任务授权（动态）。</td></tr>
+        <tr><td>OPA/Cedar 的替代品</td><td>策略引擎负责评估规则；执行包线为其提供结构化的任务实例供评估。</td></tr>
+        <tr><td>Temporal 的替代品</td><td>Temporal 保证执行一致性；执行包线决定是否允许执行。</td></tr>
+        <tr><td>新编程语言</td><td>通用语言仍用于数据平面；执行包线是控制平面。</td></tr>
+        <tr><td>正确性保证</td><td>执行包线约束行为边界，不保证边界内的行为能产生正确结果。</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- § 三层生成模型 -->
+  <div class="section" id="generation">
+    <span class="section-number">§ 05</span>
+    <h2>三层生成模型</h2>
+
+    <p>执行包线不由 LLM 自由生成——否则治理将是空洞的。LLM 是<strong>参数实例化者</strong>，而不是规则制定者。</p>
+
+    <div class="layers">
+      <div class="layer">
+        <span class="layer-num">第一层</span>
+        <div class="layer-body">
+          <strong>组织定义包线模板（人工，一次性）</strong>
+          <p>安全与平台团队定义固定的风险边界：最大仓位、最大亏损、白名单品种、禁止项基线。模板版本化管理，变更须经安全评审。</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer">
+        <span class="layer-num">第二层</span>
+        <div class="layer-body">
+          <strong>LLM 在模板边界内实例化参数（每次任务）</strong>
+          <p>填写策略版本、品种选择（必须在白名单内）、运行时间窗口、调参。不能创建新的能力类型，不能突破模板上限。</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer">
+        <span class="layer-num">第三层</span>
+        <div class="layer-body">
+          <strong>Verifier 在执行前检查包线（强制）</strong>
+          <p>自动化验证：能力覆盖检查、预算检查、禁止项检查、签名验证、有效期检查。必要时触发人工审批。</p>
+        </div>
+      </div>
+      <div class="layer-arrow">↓</div>
+      <div class="layer-result">执行被允许——或被拒绝</div>
+    </div>
+
+    <div class="callout" style="margin-top:1.5rem;">
+      <strong>明确的工程取舍</strong>
+      <p>本框架选择将 LLM 的自由度收敛为"在模板内实例化包线"，而不是允许其生成任意可执行代码。这是在自主性与可控性之间的明确取舍：LLM 能做的事受限于预定义的 primitive 集合，换来的是包线边界可以被真正强制执行。</p>
+    </div>
+  </div>
+
+  <!-- § 强制执行 -->
+  <div class="section" id="enforcement">
+    <span class="section-number">§ 06</span>
+    <h2>强制执行架构</h2>
+
+    <div class="callout">
+      <strong>不可动摇的前提</strong>
+      <p><strong>如果 Agent 能通过 Gateway 以外的任何路径到达外部系统，整个执行包线架构即告失效。</strong>更根本的前提：执行包线的定义与 Gateway 的检查逻辑，必须运行在 Agent 的控制域之外。能够修改 Gateway 规则、重启 Gateway 进程或替换包线配置的 Agent，没有任何有效的治理层。控制平面的独立性不是部署细节，而是正确性要求。</p>
+    </div>
+
+    <div class="arch">
+      <div class="arch-box">
+        <span class="box-label">Agent / 策略代码<br><small style="font-weight:300;color:#888">（数据平面）</small></span>
+        <span class="box-note">无 API 密钥。<br>无外部网络访问。<br>只能向 Gateway 提交请求。</span>
+      </div>
+      <div class="arch-arrow">│ 仅限内部请求 ↓</div>
+      <div class="arch-box gateway">
+        <span class="box-label">Order Gateway / 运行时代理<br><small style="font-weight:300;color:#aaa">（控制平面）</small></span>
+        <span class="box-note" style="color:#aaa;">持有凭证，强制执行包线。<br>运行在 Agent 控制域之外。<br>记录每一个动作。</span>
+      </div>
+      <div class="arch-arrow">│ 仅限已验证、已授权的调用 ↓</div>
+      <div class="arch-box">
+        <span class="box-label">外部系统<br><small style="font-weight:300;color:#888">（交易所 / API / 数据库）</small></span>
+        <span class="box-note"></span>
+      </div>
+    </div>
+
+    <h3>四个层面，使绕过在结构上不可能</h3>
+
+    <p><strong>1. 密钥隔离。</strong>交易所 API key 只存在于 Gateway 进程内，通过 secrets manager 注入，对策略代码不可见、不可读。即使策略代码被完全攻破，也没有直接出单的能力——密钥不在那里。</p>
+
+    <p><strong>2. 网络封锁。</strong>策略代码运行在受限网络环境中，出口规则禁止直连任何外部地址，唯一允许的出站目标是 Gateway 的内部地址。即使策略代码尝试直连交易所域名，请求会在网络层被丢弃。</p>
+
+    <p><strong>3. 执行包线逐笔检查。</strong>Gateway 对每一笔请求按序执行：禁止项 → 能力授权 → 范围合规 → 速率限制 → 预算限制 → 有效期 → 熔断状态。任一失败则拒绝请求并写入审计日志，不发出任何外部调用。</p>
+
+    <p><strong>4. 熔断与强制中断。</strong>Gateway 维护实时会话状态，触发阈值（亏损上限、回撤、连续错误、临近收盘）时主动熔断并撤销挂单。熔断恢复需要人工干预或新执行包线，Agent 自身无法解除。</p>
+  </div>
+
+  <!-- § 威胁模型 -->
+  <div class="section" id="threat-model">
+    <span class="section-number">§ 07</span>
+    <h2>执行包线保证什么，不保证什么</h2>
+
+    <div class="two-col">
+      <div class="two-col-item can">
+        <h4>强保证（合规 / 风控边界）</h4>
+        <ul>
+          <li>不访问非白名单资源</li>
+          <li>不超出仓位 / 频率 / 亏损上限</li>
+          <li>不执行禁止操作</li>
+          <li>所有动作可审计可追溯</li>
+          <li>熔断恢复需人工介入</li>
+        </ul>
+      </div>
+      <div class="two-col-item cannot">
+        <h4>不保证（质量 / 正确性风险）</h4>
+        <ul>
+          <li>策略一定盈利</li>
+          <li>信号逻辑正确</li>
+          <li>参数选择最优</li>
+          <li>边界内不产生亏损</li>
+          <li>输出内容语义准确</li>
+        </ul>
+      </div>
+    </div>
+
+    <p style="margin-top:1rem;">执行包线提供的是<strong>可控自动执行</strong>，不是<strong>正确自动执行</strong>。质量保证需要独立机制：回测、模拟盘、抽样验收、对关键决策引入 human-in-the-loop。</p>
+  </div>
+
+  <!-- § 状态 -->
+  <div class="section" id="status">
+    <span class="section-number">§ 08</span>
+    <h2>当前状态与仓库</h2>
+
+    <p>这是一个<strong>框架提案</strong>，而非生产实现。</p>
+
+    <ul class="checklist">
+      <li class="done">威胁模型</li>
+      <li class="done">核心原则</li>
+      <li class="done">JSON Schema v0.1</li>
+      <li class="done">交易领域示例</li>
+      <li class="done">Gateway 验证规范</li>
+      <li class="todo">参考实现（Gateway 代理）</li>
+      <li class="todo">能力格（Capability Lattice）的形式化定义</li>
+      <li class="todo">跨组织包线交换协议</li>
+    </ul>
+
+    <h3>仓库结构</h3>
+    <span class="code-label"><a href="https://github.com/YiZhang5643/ai-execution-envelope">ai-execution-envelope/</a></span>
+<pre>├── README.md                    # 英文版
+├── README.zh.md                 # 中文版
+├── spec/
+│   └── PRINCIPLES.md            # 框架原则的正式声明
+├── schema/
+│   └── envelope.schema.json     # JSON Schema v0.1
+├── examples/
+│   └── trading/
+│       ├── envelope.json        # MNQ 日内策略示例包线
+│       └── template.json        # 组织级模板
+├── gateway/
+│   └── VERIFICATION_SPEC.md     # Gateway 强制执行规范
+└── docs/
+    └── THREAT_MODEL.md          # 威胁模型与非目标声明</pre>
+
+    <h3>参与贡献</h3>
+    <p>最需要的贡献方向：对威胁模型的批评与补充、替代性的强制执行架构方案、其他领域的包线示例（部署、数据库迁移、支付）、能力语义的形式化处理。</p>
+  </div>
+
+  <!-- FINAL STATEMENT -->
+  <div class="final-statement">
+    当 LLM 获得现实副作用能力时，Execution Envelope 不是一种工程优化。<br>
+    <strong>它是最低安全结构。没有它，你拥有的不是"不够安全的系统"，而是根本没有治理结构的系统。</strong>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span>AI Execution Envelope · 框架提案 v0.1 · CC BY-SA 4.0</span>
+    <a href="index.html">English version →</a>
+  </div>
+
+</div>
+</body>
+</html>
