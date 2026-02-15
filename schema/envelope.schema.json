@@ -1,0 +1,297 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/execution-envelope/schema/envelope.schema.json",
+  "title": "ExecutionEnvelope",
+  "description": "A formally defined and enforceable boundary of permissible actions within which an autonomous agent must operate. Version 0.1.",
+  "version": "0.1.0",
+  "type": "object",
+  "required": ["envelope_id", "version", "goal", "capabilities", "budgets", "forbidden", "postconditions", "meta"],
+  "additionalProperties": false,
+
+  "properties": {
+
+    "envelope_id": {
+      "type": "string",
+      "description": "Globally unique identifier for this envelope instance.",
+      "pattern": "^env_[a-zA-Z0-9_-]{8,64}$",
+      "examples": ["env_mnq_intraday_20240215_a3f9"]
+    },
+
+    "version": {
+      "type": "string",
+      "description": "Envelope schema version this instance conforms to.",
+      "enum": ["0.1.0"]
+    },
+
+    "template_ref": {
+      "type": "string",
+      "description": "Optional reference to the org-level template this envelope was instantiated from.",
+      "examples": ["trading/intraday_futures_v2"]
+    },
+
+    "goal": {
+      "type": "object",
+      "description": "Declared intent of this task execution.",
+      "required": ["summary"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": "string",
+          "description": "Human-readable description of the task.",
+          "maxLength": 500
+        },
+        "task_type": {
+          "type": "string",
+          "description": "Categorical type of task for policy routing.",
+          "examples": ["trading", "reporting", "deployment", "db_migration", "payment"]
+        }
+      }
+    },
+
+    "capabilities": {
+      "type": "array",
+      "description": "Exhaustive list of resource access permissions granted for this execution. Anything not listed is implicitly denied.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["cap_id", "type"],
+        "additionalProperties": false,
+        "properties": {
+
+          "cap_id": {
+            "type": "string",
+            "description": "Unique identifier for this capability within the envelope.",
+            "pattern": "^cap_[a-z0-9_]+$"
+          },
+
+          "type": {
+            "type": "string",
+            "description": "The category of capability.",
+            "enum": [
+              "order_place",
+              "order_cancel",
+              "order_modify",
+              "db_read",
+              "db_write",
+              "http_call",
+              "email_send",
+              "file_read",
+              "file_write",
+              "deploy",
+              "cloud_resource_read",
+              "cloud_resource_modify"
+            ]
+          },
+
+          "scope": {
+            "type": "object",
+            "description": "Resource scope constraints for this capability. Structure varies by type.",
+            "additionalProperties": true
+          },
+
+          "rate_limit": {
+            "type": "object",
+            "description": "Per-capability rate limiting.",
+            "properties": {
+              "max_per_minute": { "type": "integer", "minimum": 1 },
+              "max_per_hour":   { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "budgets": {
+      "type": "object",
+      "description": "Hard consumption limits. All limits are upper bounds; exceeding any single limit must trigger rejection or circuit-break.",
+      "additionalProperties": false,
+      "properties": {
+
+        "max_actions_total": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum total actions the agent may take across all capability types."
+        },
+
+        "max_external_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum outbound calls to external systems."
+        },
+
+        "max_duration_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Maximum wall-clock time for the entire task execution."
+        },
+
+        "domain_specific": {
+          "type": "object",
+          "description": "Domain-specific budget constraints (e.g. financial, compute).",
+          "additionalProperties": true,
+          "examples": [
+            {
+              "max_orders_per_minute": 5,
+              "max_orders_per_day": 200,
+              "max_daily_loss_usd": 500,
+              "max_position_size": 2
+            }
+          ]
+        }
+      }
+    },
+
+    "forbidden": {
+      "type": "array",
+      "description": "Explicitly prohibited action types. These are checked independently of capabilities and cannot be overridden by capability grants.",
+      "items": {
+        "type": "object",
+        "required": ["effect"],
+        "additionalProperties": false,
+        "properties": {
+          "effect": {
+            "type": "string",
+            "description": "The prohibited action.",
+            "examples": [
+              "withdraw_funds",
+              "change_api_keys",
+              "modify_governance_config",
+              "restart_gateway",
+              "external_network_call",
+              "increase_leverage",
+              "trade_unlisted_symbols",
+              "write_production_db",
+              "send_external_email"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Human-readable rationale for this prohibition."
+          }
+        }
+      }
+    },
+
+    "postconditions": {
+      "type": "array",
+      "description": "Verifiable conditions that must hold after execution completes. The Gateway checks these against execution state.",
+      "items": {
+        "type": "object",
+        "required": ["condition_id", "check"],
+        "additionalProperties": false,
+        "properties": {
+          "condition_id": {
+            "type": "string",
+            "pattern": "^post_[a-z0-9_]+$"
+          },
+          "check": {
+            "type": "string",
+            "description": "Identifier of the verification check to run.",
+            "examples": [
+              "all_orders_logged",
+              "all_risk_checks_passed",
+              "no_open_positions_remain",
+              "audit_log_complete"
+            ]
+          },
+          "critical": {
+            "type": "boolean",
+            "default": true,
+            "description": "If true, a failing postcondition triggers a fault. If false, it generates a warning."
+          }
+        }
+      }
+    },
+
+    "approval": {
+      "type": "object",
+      "description": "Approval record for this envelope instance.",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "description": "Whether human approval is required before execution."
+        },
+        "approved_by": {
+          "type": "string",
+          "description": "Identity of the approver."
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approval_token": {
+          "type": "string",
+          "description": "Signed approval token from the AuthZ service."
+        }
+      }
+    },
+
+    "circuit_breaker": {
+      "type": "object",
+      "description": "Conditions under which the Gateway must halt all execution immediately.",
+      "additionalProperties": false,
+      "properties": {
+        "triggers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["condition"],
+            "properties": {
+              "condition": {
+                "type": "string",
+                "examples": [
+                  "daily_loss >= max_daily_loss_usd",
+                  "error_rate > 0.1",
+                  "consecutive_failures >= 3"
+                ]
+              },
+              "action": {
+                "type": "string",
+                "enum": ["halt_and_cancel", "halt_only", "alert_only"],
+                "default": "halt_and_cancel"
+              }
+            }
+          }
+        },
+        "recovery": {
+          "type": "string",
+          "enum": ["manual_only", "new_envelope_required"],
+          "default": "manual_only",
+          "description": "How the system may exit the halted state. The agent itself may never trigger recovery."
+        }
+      }
+    },
+
+    "meta": {
+      "type": "object",
+      "description": "Envelope metadata.",
+      "required": ["created_at", "expires_at", "issued_by"],
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Envelope is invalid after this time. Expired envelopes must be rejected."
+        },
+        "issued_by": {
+          "type": "string",
+          "description": "The AuthZ service or identity that issued this envelope."
+        },
+        "signature": {
+          "type": "string",
+          "description": "Cryptographic signature over the envelope content, excluding this field. Used to detect tampering."
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Optional labels for routing, filtering, and audit."
+        }
+      }
+    }
+  }
+}
