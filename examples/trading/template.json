@@ -1,0 +1,69 @@
+{
+  "_comment": "Org-level envelope template: trading/intraday_futures_v2. This file defines the maximum permissible bounds for any intraday futures strategy envelope. LLM-instantiated envelopes must stay within these bounds. Template changes require security review and platform team approval.",
+  "_template_id": "trading/intraday_futures_v2",
+  "_template_version": "2.1.0",
+  "_owned_by": "platform-security-team",
+  "_last_reviewed": "2024-01-10",
+
+  "allowed_capability_types": [
+    "order_place",
+    "order_cancel",
+    "http_call"
+  ],
+
+  "capability_bounds": {
+    "order_place": {
+      "symbols_allowlist": ["MNQ", "MES", "MYM", "M2K"],
+      "order_types_allowlist": ["limit", "market"],
+      "max_qty_per_order_ceiling": 5,
+      "session_constraint": "intraday_only"
+    },
+    "http_call": {
+      "allowed_hosts_allowlist": ["datafeed.internal", "risk-engine.internal"],
+      "methods_allowlist": ["GET"]
+    }
+  },
+
+  "budget_ceilings": {
+    "max_orders_per_minute": 10,
+    "max_orders_per_day": 500,
+    "max_position_size_contracts": 5,
+    "max_daily_loss_usd": 2000,
+    "max_duration_seconds": 28800,
+    "max_external_calls": 0
+  },
+
+  "forbidden_baseline": [
+    "withdraw_funds",
+    "change_api_keys",
+    "increase_leverage",
+    "hold_overnight_position",
+    "external_network_call",
+    "modify_governance_config",
+    "restart_gateway",
+    "order_modify"
+  ],
+
+  "required_postconditions": [
+    "all_orders_logged",
+    "all_risk_checks_passed",
+    "audit_log_complete"
+  ],
+
+  "required_circuit_breakers": [
+    "daily_loss >= max_daily_loss_usd",
+    "session_end_approached_within_300s AND open_position_exists"
+  ],
+
+  "approval_policy": {
+    "auto_approve_if": [
+      "max_daily_loss_usd <= 500",
+      "max_position_size_contracts <= 2"
+    ],
+    "require_human_approval_if": [
+      "max_daily_loss_usd > 500",
+      "max_position_size_contracts > 2",
+      "new_symbol_not_previously_used"
+    ]
+  }
+}
