@@ -3,7 +3,7 @@
 > **A governance framework for autonomous agents that execute real-world side effects.**
 
 [![Status](https://img.shields.io/badge/status-proposal%20v0.1-orange)]()
-[![License](https://img.shields.io/badge/license-MIT-blue)]()
+[![License](https://img.shields.io/badge/License-CC%20BY--SA%204.0-blue.svg)]()
 
 ---
 
